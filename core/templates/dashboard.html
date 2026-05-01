@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="min-h-screen bg-gray-100 p-6">
+    <!-- Top Bar -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-indigo-600">Task Manager</h1>
+
+      <div class="flex items-center gap-3">
+        <span class="font-medium">{{ request.user.username }}</span>
+        <span class="bg-red-100 text-red-600 px-2 py-1 rounded text-sm">{{ request.user.role|upper }}</span>
+
+        <a href="{% url 'logout' %}" class="bg-gray-700 text-white px-3 py-1 rounded hover:bg-gray-800">Logout</a>
+      </div>
+    </div>
+
+    <!-- Create Task -->
+    <div class="bg-white p-6 rounded-xl shadow mb-6">
+      <h2 class="text-lg font-semibold mb-4">Create New Task</h2>
+
+      <form method="POST" action="{% url 'create_task' %}" class="space-y-4">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-2 gap-4">
+          <input type="text" name="title" placeholder="Title" class="w-full p-2 border rounded" required />
+
+          <select name="assigned_to" class="w-full p-2 border rounded">
+            <option value="">Assign to</option>
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <textarea name="description" placeholder="Description" class="w-full p-2 border rounded"></textarea>
+
+        <input type="date" name="due_date" class="w-full p-2 border rounded" />
+
+        <button type="submit" class="w-full bg-indigo-500 text-white py-2 rounded hover:bg-indigo-600">Create Task</button>
+      </form>
+    </div>
+
+    <!-- Tasks -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-lg font-semibold mb-4">My Tasks</h2>
+
+      <div class="space-y-4">
+        {% for task in tasks %}
+          <div class="p-4 border rounded-lg flex justify-between items-center">
+            <div>
+              <h3 class="font-semibold">{{ task.title }}</h3>
+              <p class="text-sm text-gray-500">Assigned: {{ task.assigned_to.username }}</p>
+              <p class="text-sm text-gray-400">Due: {{ task.due_date }}</p>
+              {% if task.is_overdue %}
+                <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full uppercase mt-1 inline-block">Overdue</span>
+              {% endif %}
+            </div>
+
+            <div class="flex items-center gap-4">
+              <!-- Status Update Form -->
+              <form method="POST" action="{% url 'update_task_status' task.id %}" class="flex items-center gap-2">
+                {% csrf_token %}
+                <select name="status" onchange="this.form.submit()" class="text-sm border rounded p-1 bg-gray-50">
+                  <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option>
+                  <option value="ongoing" {% if task.status == 'ongoing' %}selected{% endif %}>Ongoing</option>
+                  <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+                </select>
+              </form>
+
+              <span class="px-3 py-1 text-sm rounded font-medium
+                            {% if task.status == 'completed' %}
+                                bg-green-100 text-green-600
+                            {% elif task.status == 'ongoing' %}
+                                bg-blue-100 text-blue-600
+                            {% else %}
+                                bg-gray-100 text-gray-600
+                            {% endif %}
+                        ">
+                {{ task.status|capfirst }}
+              </span>
+
+              <a href="{% url 'delete_task' task.id %}" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Delete</a>
+            </div>
+          </div>
+        {% empty %}
+          <p class="text-gray-500">No tasks yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
