@@ -44,6 +44,13 @@ def create_task(request):
             return redirect('dashboard')
 
         assigned_user = User.objects.get(id=assigned_id)
+        
+        # Security Check: Only admin/manager can assign tasks to others
+        if request.user.role not in ['admin', 'manager'] and assigned_user != request.user:
+            from django.contrib import messages
+            messages.error(request, "You can only assign tasks to yourself.")
+            return redirect('dashboard')
+
         Task.objects.create(
             title=title, 
             description=description, 
@@ -51,7 +58,6 @@ def create_task(request):
             assigned_to=assigned_user,
             created_by=request.user
         )
-
 
     return redirect('dashboard')
 
